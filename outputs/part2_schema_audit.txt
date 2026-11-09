@@ -1,0 +1,59 @@
+﻿Files scanned: 170
+
+LNCI: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+SC: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+NCLNLS: 2 different types
+   double       9 quarters  (e.g. 19840331 ... 19961231)
+   int64      161 quarters  (e.g. 19860331 ... 20260630)
+
+LNRE: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+LNLSNET: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+DEPDOM: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+LNLSGR: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+DEP: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+NAASSET: 2 different types
+   double      24 quarters  (e.g. 19840331 ... 19891231)
+   int64      146 quarters  (e.g. 19900331 ... 20260630)
+
+LNCON: 2 different types
+   int64        7 quarters  (e.g. 19840331 ... 19850930)
+   double     163 quarters  (e.g. 19851231 ... 20260630)
+
+RBCRWAJ: 2 different types
+   int64       24 quarters  (e.g. 19840331 ... 19891231)
+   double     146 quarters  (e.g. 19900331 ... 20260630)
+
+P9ASSET: 2 different types
+   double      25 quarters  (e.g. 19840331 ... 19961231)
+   int64      145 quarters  (e.g. 19900331 ... 20260630)
+
+CHBAL: 2 different types
+   int64      169 quarters  (e.g. 19840331 ... 20260630)
+   double       1 quarters  (e.g. 19961231 ... 19961231)
+
+P3ASSET: 2 different types
+   null        68 quarters  (e.g. 19840331 ... 20001231)
+   int64      102 quarters  (e.g. 20010331 ... 20260630)
+
+Columns with inconsistent type: 14 of 33
