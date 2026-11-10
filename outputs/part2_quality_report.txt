@@ -1,0 +1,91 @@
+ROWS 1,682,616 | BANKS 24,064 | QUARTERS 170
+
+[1] MISSING VALUES
+shape: (33, 3)
+┌─────────┬────────┬─────────────┐
+│ column  ┆ nulls  ┆ pct_missing │
+│ ---     ┆ ---    ┆ ---         │
+│ str     ┆ u32    ┆ f64         │
+╞═════════╪════════╪═════════════╡
+│ P3ASSET ┆ 971925 ┆ 57.76       │
+│ NTLNLS  ┆ 79918  ┆ 4.75        │
+│ P9ASSET ┆ 77731  ┆ 4.62        │
+│ NAASSET ┆ 77730  ┆ 4.62        │
+│ ELNATR  ┆ 43166  ┆ 2.57        │
+│ ROE     ┆ 18743  ┆ 1.11        │
+│ BRO     ┆ 16761  ┆ 1.0         │
+│ EINTEXP ┆ 6437   ┆ 0.38        │
+│ INTINC  ┆ 4692   ┆ 0.28        │
+│ NONIX   ┆ 4692   ┆ 0.28        │
+│ NETINC  ┆ 4692   ┆ 0.28        │
+│ NONII   ┆ 4692   ┆ 0.28        │
+│ ORE     ┆ 4149   ┆ 0.25        │
+│ LNATRES ┆ 4149   ┆ 0.25        │
+│ EQ      ┆ 4148   ┆ 0.25        │
+│ LNCON   ┆ 3940   ┆ 0.23        │
+│ NCLNLS  ┆ 2499   ┆ 0.15        │
+│ LNCI    ┆ 1      ┆ 0.0         │
+│ SC      ┆ 1      ┆ 0.0         │
+│ LNRE    ┆ 1      ┆ 0.0         │
+│ LNLSNET ┆ 1      ┆ 0.0         │
+│ DEPDOM  ┆ 1      ┆ 0.0         │
+│ LNLSGR  ┆ 1      ┆ 0.0         │
+│ DEP     ┆ 1      ┆ 0.0         │
+│ CHBAL   ┆ 1      ┆ 0.0         │
+│ NIMY    ┆ 0      ┆ 0.0         │
+│ REPDTE  ┆ 0      ┆ 0.0         │
+│ STNAME  ┆ 0      ┆ 0.0         │
+│ RBC1AAJ ┆ 0      ┆ 0.0         │
+│ ROA     ┆ 0      ┆ 0.0         │
+│ ASSET   ┆ 0      ┆ 0.0         │
+│ RBCRWAJ ┆ 0      ┆ 0.0         │
+│ CERT    ┆ 0      ┆ 0.0         │
+└─────────┴────────┴─────────────┘
+
+[2] BANKS PER QUARTER (first 3 / last 3 / min / max)
+shape: (3, 2)
+┌──────────┬─────────┐
+│ REPDTE   ┆ n_banks │
+│ ---      ┆ ---     │
+│ str      ┆ u32     │
+╞══════════╪═════════╡
+│ 19840331 ┆ 17930   │
+│ 19840630 ┆ 17935   │
+│ 19840930 ┆ 17946   │
+└──────────┴─────────┘
+shape: (3, 2)
+┌──────────┬─────────┐
+│ REPDTE   ┆ n_banks │
+│ ---      ┆ ---     │
+│ str      ┆ u32     │
+╞══════════╪═════════╡
+│ 20251231 ┆ 4411    │
+│ 20260331 ┆ 4353    │
+│ 20260630 ┆ 4313    │
+└──────────┴─────────┘
+min 4313 max 18133
+
+[3] IMPLAUSIBLE VALUES
+ASSET <= 0      : 0
+ASSET is null   : 0
+EQ < 0 (negative equity): 15659
+|ROA| > 50 (%)  : 1056
+|ROE| > 200 (%) : 4624
+DEP > ASSET     : 6204
+
+[4] HISTORY GAPS
+rows preceded by a missing quarter: 33 | banks affected: 32
+banks whose last report is before the final quarter (exited): 19751
+
+[5] NETINC / ASSET BY QUARTER-END MONTH (if ~ 1:2:3:4 => year-to-date cumulative)
+shape: (4, 2)
+┌───────┬──────────────────────────────┐
+│ MONTH ┆ median_NETINC_over_ASSET_pct │
+│ ---   ┆ ---                          │
+│ str   ┆ f64                          │
+╞═══════╪══════════════════════════════╡
+│ 03    ┆ 0.241899                     │
+│ 06    ┆ 0.493695                     │
+│ 09    ┆ 0.729184                     │
+│ 12    ┆ 0.909424                     │
+└───────┴──────────────────────────────┘
