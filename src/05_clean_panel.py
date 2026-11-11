@@ -1,6 +1,10 @@
 from pathlib import Path
 
 import polars as pl
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from common import tee_log
+tee_log("outputs/part2_clean_panel_report.txt")
 
 pl.Config.set_tbl_rows(40)
 YTD = ["NETINC", "INTINC", "EINTEXP", "NONII", "NONIX", "ELNATR", "NTLNLS"]
@@ -27,7 +31,7 @@ for c in YTD:
 p = p.with_columns(exprs)
 
 # missing flags (information only; no imputation is fitted here)
-flag_cols = ["P3ASSET", "P9ASSET", "NAASSET", "NTLNLS", "ELNATR", "ROE", "BRO"]
+flag_cols = ["P9ASSET", "NAASSET", "NTLNLS", "ELNATR", "ROE", "BRO"]
 p = p.with_columns([pl.col(c).is_null().cast(pl.Int8).alias(c + "_MISS") for c in flag_cols])
 
 print("rows:", p.height, "| banks:", p["CERT"].n_unique(), "| positives:", p["y"].sum())
@@ -39,5 +43,6 @@ for c in YTD:
 chk = p.filter((pl.col("MONTH") == 3)).select((pl.col("NETINC") - pl.col("NETINC_Q")).abs().sum())
 print("Q1 check (should be 0):", chk.item())
 
+assert "COST" not in p.columns and "FD" not in p.columns
 p.write_parquet("data_processed/panel_clean.parquet", compression="zstd")
 print("saved data_processed/panel_clean.parquet")

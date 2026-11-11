@@ -5,7 +5,8 @@ from pathlib import Path
 import polars as pl
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import load_financials
+from common import load_financials, tee_log
+tee_log("outputs/part2_labels_report.txt")
 
 pl.Config.set_tbl_rows(60)
 Path("data_processed").mkdir(exist_ok=True)
@@ -22,8 +23,9 @@ fail = (pl.read_parquet("data_raw/fdic/failures.parquet")
         .filter((pl.col("RESTYPE") == "FAILURE") & pl.col("CERT").is_not_null()))
 print("failure rows:", fail.height, "| distinct CERT:", fail["CERT"].n_unique())
 fail = fail.group_by("CERT").agg(pl.col("FD").min().alias("FD"), pl.col("COST").first().alias("COST"))
+fail.write_parquet("data_processed/failure_costs.parquet")  # COST kept separately, for Part 5 only
 
-p = df.join(fail, on="CERT", how="left")
+p = df.join(fail.select("CERT", "FD"), on="CERT", how="left")
 
 # rows reported on/after the failure date: not a live bank any more
 post = p.filter(pl.col("FD").is_not_null() & (pl.col("QDATE") >= pl.col("FD")))

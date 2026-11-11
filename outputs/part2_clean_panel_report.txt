@@ -1,0 +1,11 @@
+rows: 1663876 | banks: 24053 | positives: 10860
+null share of quarterly columns:
+  NETINC_Q: 0.59%
+  INTINC_Q: 0.59%
+  EINTEXP_Q: 0.66%
+  NONII_Q: 0.59%
+  NONIX_Q: 0.59%
+  ELNATR_Q: 2.89%
+  NTLNLS_Q: 5.03%
+Q1 check (should be 0): 0.0
+saved data_processed/panel_clean.parquet
