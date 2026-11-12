@@ -1,0 +1,4 @@
+method,median_seconds,peak_RAM_MB,all_runs_s,speedup_vs_pandas
+pandas,2.26,696,"[2.83, 2.26, 1.98]",1.0
+polars_eager,2.63,1374,"[2.87, 2.63, 2.08]",0.9
+polars_lazy,1.48,533,"[1.82, 1.48, 1.24]",1.5

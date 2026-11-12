@@ -1,0 +1,63 @@
+=== UNOPTIMIZED PLAN ===
+SORT BY [col("QDATE")]
+  AGGREGATE[maintain_order: false]
+    [len().alias("n_rows"), col("EQ_RATIO").median().alias("med_EQ_RATIO"), col("NPL_RATIO").median().alias("med_NPL_RATIO"), col("ASSET_G4").median().alias("med_ASSET_G4"), col("ROA_MA4").median().alias("med_ROA_MA4"), col("y").sum().alias("n_positive")] BY [col("QDATE")]
+    FROM
+     WITH_COLUMNS:
+     [((col("ASSET") / col("ASSET").shift([dyn int: 4]).over([col("CERT")])) - 1.0).alias("ASSET_G4"), (col("EQ_RATIO") - col("EQ_RATIO").shift([dyn int: 4]).over([col("CERT")])).alias("EQ_RATIO_D4"), col("ROA").rolling_mean().over([col("CERT")]).alias("ROA_MA4")] 
+      SORT BY [col("CERT"), col("QDATE")]
+         WITH_COLUMNS:
+         [((col("EQ") / col("ASSET")) * 100.0).alias("EQ_RATIO"), ((col("NCLNLS") / col("LNLSGR")) * 100.0).alias("NPL_RATIO"), ((col("LNATRES") / col("LNLSGR")) * 100.0).alias("RES_RATIO")] 
+          SELECT [col("CERT"), col("QDATE"), col("ASSET"), col("EQ"), col("LNLSGR"), col("LNATRES"), col("NCLNLS"), col("ROA"), col("y")]
+            FILTER col("QDATE") <= 2009-12-31
+            FROM
+              Parquet SCAN [data_processed/panel_clean.parquet]
+              PROJECT */51 COLUMNS
+              ESTIMATED ROWS: 1663876
+
+=== OPTIMIZED PLAN ===
+SORT BY [col("QDATE")]
+  AGGREGATE[maintain_order: false]
+    [len().alias("n_rows"), col("EQ_RATIO").median().alias("med_EQ_RATIO"), col("NPL_RATIO").median().alias("med_NPL_RATIO"), col("ASSET_G4").median().alias("med_ASSET_G4"), col("ROA_MA4").median().alias("med_ROA_MA4"), col("y").sum().alias("n_positive")] BY [col("QDATE")]
+    FROM
+    simple π 6/6 ["QDATE", "EQ_RATIO", ... 4 other columns]
+       WITH_COLUMNS:
+       [((col("ASSET") / col("ASSET").shift([dyn int: 4]).over([col("CERT")])) - 1.0).alias("ASSET_G4"), col("ROA").rolling_mean().over([col("CERT")]).alias("ROA_MA4")] 
+        SORT BY [col("CERT"), col("QDATE")]
+          simple π 7/7 ["CERT", "QDATE", "ASSET", ... 4 other columns]
+             WITH_COLUMNS:
+             [((col("EQ") / col("ASSET")) * 100.0).alias("EQ_RATIO"), ((col("NCLNLS") / col("LNLSGR")) * 100.0).alias("NPL_RATIO")] 
+              Parquet SCAN [data_processed/panel_clean.parquet]
+              PROJECT 8/51 COLUMNS
+              SELECTION: col("QDATE") <= 2009-12-31
+              ESTIMATED ROWS: 1663876
+
+lazy optimised: 0.819s | no optimisation (reads all columns, no pushdown): 1.770s
+same result: True
+shape: (8, 7)
+┌────────────┬────────┬──────────────┬───────────────┬──────────────┬─────────────┬────────────┐
+│ QDATE      ┆ n_rows ┆ med_EQ_RATIO ┆ med_NPL_RATIO ┆ med_ASSET_G4 ┆ med_ROA_MA4 ┆ n_positive │
+│ ---        ┆ ---    ┆ ---          ┆ ---           ┆ ---          ┆ ---         ┆ ---        │
+│ date       ┆ u32    ┆ f64          ┆ f64           ┆ f64          ┆ f64         ┆ i64        │
+╞════════════╪════════╪══════════════╪═══════════════╪══════════════╪═════════════╪════════════╡
+│ 1984-03-31 ┆ 17928  ┆ 7.781126     ┆ 1.750106      ┆ null         ┆ null        ┆ 83         │
+│ 1984-06-30 ┆ 17933  ┆ 7.78006      ┆ 1.68089       ┆ null         ┆ null        ┆ 96         │
+│ 1984-09-30 ┆ 17944  ┆ 7.889267     ┆ 1.739158      ┆ null         ┆ null        ┆ 117        │
+│ 1984-12-31 ┆ 17947  ┆ 7.629147     ┆ 1.713489      ┆ null         ┆ 0.919014    ┆ 131        │
+│ 1985-03-31 ┆ 17966  ┆ 7.76943      ┆ 1.978014      ┆ 0.075278     ┆ 0.916994    ┆ 144        │
+│ 1985-06-30 ┆ 17845  ┆ 7.813096     ┆ 2.053946      ┆ 0.088821     ┆ 0.918635    ┆ 111        │
+│ 1985-09-30 ┆ 18045  ┆ 7.82423      ┆ 2.041871      ┆ 0.075303     ┆ 0.928818    ┆ 152        │
+│ 1985-12-31 ┆ 18069  ┆ 7.631523     ┆ 1.99838       ┆ 0.06936      ┆ 0.946622    ┆ 155        │
+└────────────┴────────┴──────────────┴───────────────┴──────────────┴─────────────┴────────────┘
+shape: (4, 7)
+┌────────────┬────────┬──────────────┬───────────────┬──────────────┬─────────────┬────────────┐
+│ QDATE      ┆ n_rows ┆ med_EQ_RATIO ┆ med_NPL_RATIO ┆ med_ASSET_G4 ┆ med_ROA_MA4 ┆ n_positive │
+│ ---        ┆ ---    ┆ ---          ┆ ---           ┆ ---          ┆ ---         ┆ ---        │
+│ date       ┆ u32    ┆ f64          ┆ f64           ┆ f64          ┆ f64         ┆ i64        │
+╞════════════╪════════╪══════════════╪═══════════════╪══════════════╪═════════════╪════════════╡
+│ 2009-03-31 ┆ 8337   ┆ 9.917655     ┆ 1.502854      ┆ 0.052613     ┆ 0.663071    ┆ 160        │
+│ 2009-06-30 ┆ 8286   ┆ 9.911634     ┆ 1.656598      ┆ 0.050219     ┆ 0.59045     ┆ 181        │
+│ 2009-09-30 ┆ 8190   ┆ 10.060052    ┆ 1.77017       ┆ 0.050154     ┆ 0.538117    ┆ 172        │
+│ 2009-12-31 ┆ 8103   ┆ 9.829599     ┆ 1.806753      ┆ 0.046511     ┆ 0.516518    ┆ 157        │
+└────────────┴────────┴──────────────┴───────────────┴──────────────┴─────────────┴────────────┘
+rows: 1295349 | positives: 9751

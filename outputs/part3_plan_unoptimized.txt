@@ -1,0 +1,15 @@
+SORT BY [col("QDATE")]
+  AGGREGATE[maintain_order: false]
+    [len().alias("n_rows"), col("EQ_RATIO").median().alias("med_EQ_RATIO"), col("NPL_RATIO").median().alias("med_NPL_RATIO"), col("ASSET_G4").median().alias("med_ASSET_G4"), col("ROA_MA4").median().alias("med_ROA_MA4"), col("y").sum().alias("n_positive")] BY [col("QDATE")]
+    FROM
+     WITH_COLUMNS:
+     [((col("ASSET") / col("ASSET").shift([dyn int: 4]).over([col("CERT")])) - 1.0).alias("ASSET_G4"), (col("EQ_RATIO") - col("EQ_RATIO").shift([dyn int: 4]).over([col("CERT")])).alias("EQ_RATIO_D4"), col("ROA").rolling_mean().over([col("CERT")]).alias("ROA_MA4")] 
+      SORT BY [col("CERT"), col("QDATE")]
+         WITH_COLUMNS:
+         [((col("EQ") / col("ASSET")) * 100.0).alias("EQ_RATIO"), ((col("NCLNLS") / col("LNLSGR")) * 100.0).alias("NPL_RATIO"), ((col("LNATRES") / col("LNLSGR")) * 100.0).alias("RES_RATIO")] 
+          SELECT [col("CERT"), col("QDATE"), col("ASSET"), col("EQ"), col("LNLSGR"), col("LNATRES"), col("NCLNLS"), col("ROA"), col("y")]
+            FILTER col("QDATE") <= 2009-12-31
+            FROM
+              Parquet SCAN [data_processed/panel_clean.parquet]
+              PROJECT */51 COLUMNS
+              ESTIMATED ROWS: 1663876
