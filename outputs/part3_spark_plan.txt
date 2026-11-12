@@ -1,0 +1,78 @@
+== Physical Plan ==
+AdaptiveSparkPlan (13)
++- Sort (12)
+   +- Exchange (11)
+      +- ObjectHashAggregate (10)
+         +- Exchange (9)
+            +- ObjectHashAggregate (8)
+               +- Project (7)
+                  +- Window (6)
+                     +- Sort (5)
+                        +- Exchange (4)
+                           +- Project (3)
+                              +- Filter (2)
+                                 +- Scan parquet  (1)
+
+
+(1) Scan parquet 
+Output [8]: [NCLNLS#12, ROA#15, ASSET#18, LNLSGR#19, EQ#22, CERT#30, QDATE#33, y#34]
+Batched: true
+Location: InMemoryFileIndex [file:/content/panel_clean.parquet]
+PushedFilters: [IsNotNull(QDATE), LessThanOrEqual(QDATE,2009-12-31)]
+ReadSchema: struct<NCLNLS:double,ROA:double,ASSET:double,LNLSGR:double,EQ:double,CERT:int,QDATE:date,y:tinyint>
+
+(2) Filter
+Input [8]: [NCLNLS#12, ROA#15, ASSET#18, LNLSGR#19, EQ#22, CERT#30, QDATE#33, y#34]
+Condition : (isnotnull(QDATE#33) AND (QDATE#33 <= 2009-12-31))
+
+(3) Project
+Output [7]: [CERT#30, QDATE#33, ASSET#18, ROA#15, y#34, ((EQ#22 / ASSET#18) * 100.0) AS EQ_RATIO#52, CASE WHEN NOT (LNLSGR#19 = 0.0) THEN ((NCLNLS#12 / LNLSGR#19) * 100.0) END AS NPL_RATIO#53]
+Input [8]: [NCLNLS#12, ROA#15, ASSET#18, LNLSGR#19, EQ#22, CERT#30, QDATE#33, y#34]
+
+(4) Exchange
+Input [7]: [CERT#30, QDATE#33, ASSET#18, ROA#15, y#34, EQ_RATIO#52, NPL_RATIO#53]
+Arguments: hashpartitioning(CERT#30, 8), ENSURE_REQUIREMENTS, [plan_id=27]
+
+(5) Sort
+Input [7]: [CERT#30, QDATE#33, ASSET#18, ROA#15, y#34, EQ_RATIO#52, NPL_RATIO#53]
+Arguments: [CERT#30 ASC NULLS FIRST, QDATE#33 ASC NULLS FIRST], false, 0
+
+(6) Window
+Input [7]: [CERT#30, QDATE#33, ASSET#18, ROA#15, y#34, EQ_RATIO#52, NPL_RATIO#53]
+Arguments: [lag(ASSET#18, -4, null) windowspecdefinition(CERT#30, QDATE#33 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -4, -4)) AS _we0#56, count(ROA#15) windowspecdefinition(CERT#30, QDATE#33 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we0#62L, avg(ROA#15) windowspecdefinition(CERT#30, QDATE#33 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we1#63], [CERT#30], [QDATE#33 ASC NULLS FIRST]
+
+(7) Project
+Output [6]: [QDATE#33, y#34, EQ_RATIO#52, NPL_RATIO#53, ((ASSET#18 / _we0#56) - 1.0) AS ASSET_G4#55, CASE WHEN (_we0#62L = 4) THEN _we1#63 END AS ROA_MA4#59]
+Input [10]: [CERT#30, QDATE#33, ASSET#18, ROA#15, y#34, EQ_RATIO#52, NPL_RATIO#53, _we0#56, _we0#62L, _we1#63]
+
+(8) ObjectHashAggregate
+Input [6]: [QDATE#33, y#34, EQ_RATIO#52, NPL_RATIO#53, ASSET_G4#55, ROA_MA4#59]
+Keys [1]: [QDATE#33]
+Functions [6]: [partial_count(1), partial_percentile(EQ_RATIO#52, 0.5, 1, 0, 0, false), partial_percentile(NPL_RATIO#53, 0.5, 1, 0, 0, false), partial_percentile(ASSET_G4#55, 0.5, 1, 0, 0, false), partial_percentile(ROA_MA4#59, 0.5, 1, 0, 0, false), partial_sum(y#34)]
+Aggregate Attributes [6]: [count#91L, buf#92, buf#93, buf#94, buf#95, sum#96L]
+Results [7]: [QDATE#33, count#97L, buf#98, buf#99, buf#100, buf#101, sum#102L]
+
+(9) Exchange
+Input [7]: [QDATE#33, count#97L, buf#98, buf#99, buf#100, buf#101, sum#102L]
+Arguments: hashpartitioning(QDATE#33, 8), ENSURE_REQUIREMENTS, [plan_id=33]
+
+(10) ObjectHashAggregate
+Input [7]: [QDATE#33, count#97L, buf#98, buf#99, buf#100, buf#101, sum#102L]
+Keys [1]: [QDATE#33]
+Functions [6]: [count(1), percentile(EQ_RATIO#52, 0.5, 1, 0, 0, false), percentile(NPL_RATIO#53, 0.5, 1, 0, 0, false), percentile(ASSET_G4#55, 0.5, 1, 0, 0, false), percentile(ROA_MA4#59, 0.5, 1, 0, 0, false), sum(y#34)]
+Aggregate Attributes [6]: [count(1)#85L, percentile(EQ_RATIO#52, 0.5, 1, 0, 0, false)#86, percentile(NPL_RATIO#53, 0.5, 1, 0, 0, false)#87, percentile(ASSET_G4#55, 0.5, 1, 0, 0, false)#88, percentile(ROA_MA4#59, 0.5, 1, 0, 0, false)#89, sum(y#34)#90L]
+Results [7]: [QDATE#33, count(1)#85L AS n_rows#64L, percentile(EQ_RATIO#52, 0.5, 1, 0, 0, false)#86 AS med_EQ_RATIO#65, percentile(NPL_RATIO#53, 0.5, 1, 0, 0, false)#87 AS med_NPL_RATIO#66, percentile(ASSET_G4#55, 0.5, 1, 0, 0, false)#88 AS med_ASSET_G4#67, percentile(ROA_MA4#59, 0.5, 1, 0, 0, false)#89 AS med_ROA_MA4#68, sum(y#34)#90L AS n_positive#69L]
+
+(11) Exchange
+Input [7]: [QDATE#33, n_rows#64L, med_EQ_RATIO#65, med_NPL_RATIO#66, med_ASSET_G4#67, med_ROA_MA4#68, n_positive#69L]
+Arguments: rangepartitioning(QDATE#33 ASC NULLS FIRST, 8), ENSURE_REQUIREMENTS, [plan_id=36]
+
+(12) Sort
+Input [7]: [QDATE#33, n_rows#64L, med_EQ_RATIO#65, med_NPL_RATIO#66, med_ASSET_G4#67, med_ROA_MA4#68, n_positive#69L]
+Arguments: [QDATE#33 ASC NULLS FIRST], true, 0
+
+(13) AdaptiveSparkPlan
+Output [7]: [QDATE#33, n_rows#64L, med_EQ_RATIO#65, med_NPL_RATIO#66, med_ASSET_G4#67, med_ROA_MA4#68, n_positive#69L]
+Arguments: isFinalPlan=false
+
+
