@@ -1,0 +1,74 @@
+=== PART 5: MODELLING, TEMPORAL VALIDATION & COST-BASED THRESHOLDING ===
+Loaded DEV: (1295349, 39), y=1: 9,751 (0.753%)
+Loaded TEST (locked until Step 4): (336982, 39), y=1: 652 (0.193%)
+
+[1] EXPANDING-WINDOW TEMPORAL CV ON DEV (4-QUARTER PURGE GAP PER FOLD)
+
+  Fold1_SL_1990_1993: Train<=1988-12-31 (353,871 rows, 4,464 pos) | Val 1990-03-31..1993-12-31 (233,913 rows, 2,400 pos)
+    baseline_camels4   -> PR-AUC=0.1997 | ROC-AUC=0.9533 | Rec@Top5%=0.7896 (0.8s)
+    logistic_l2_full   -> PR-AUC=0.2766 | ROC-AUC=0.9750 | Rec@Top5%=0.8888 (5.2s)
+    hist_gbdt_full     -> PR-AUC=0.3686 | ROC-AUC=0.9787 | Rec@Top5%=0.8825 (9.6s)
+
+  Fold2_Calm_2000_2006: Train<=1998-12-31 (888,382 rows, 8,548 pos) | Val 2000-03-31..2006-12-31 (263,593 rows, 102 pos)
+    baseline_camels4   -> PR-AUC=0.0938 | ROC-AUC=0.8546 | Rec@Top5%=0.6569 (1.2s)
+    logistic_l2_full   -> PR-AUC=0.0937 | ROC-AUC=0.8316 | Rec@Top5%=0.6863 (11.4s)
+    hist_gbdt_full     -> PR-AUC=0.0942 | ROC-AUC=0.8902 | Rec@Top5%=0.7647 (24.2s)
+
+  Fold3_GFC_2008_2009: Train<=2006-12-31 (1,193,676 rows, 8,678 pos) | Val 2008-03-31..2009-12-31 (66,919 rows, 1,025 pos)
+    baseline_camels4   -> PR-AUC=0.6292 | ROC-AUC=0.9700 | Rec@Top5%=0.8615 (2.1s)
+    logistic_l2_full   -> PR-AUC=0.6550 | ROC-AUC=0.9710 | Rec@Top5%=0.8615 (17.4s)
+    hist_gbdt_full     -> PR-AUC=0.6399 | ROC-AUC=0.9767 | Rec@Top5%=0.8741 (34.5s)
+
+  --- POOLED OUT-OF-FOLD & MEAN TEMPORAL CV SUMMARY ---
+           model  mean_fold_PR_AUC  mean_fold_ROC_AUC  pooled_OOF_PR_AUC  pooled_OOF_ROC_AUC  pooled_OOF_Rec_Top5pct
+  hist_gbdt_full            0.3676             0.9485             0.4033              0.9809                  0.9249
+logistic_l2_full            0.3418             0.9259             0.3050              0.9730                  0.9093
+baseline_camels4            0.3076             0.9260             0.2499              0.9625                  0.8758
+
+Selected Champion Model on DEV CV: hist_gbdt_full
+
+[2] DATA-DRIVEN SUPERVISORY COST ESTIMATION (DEV <= 2009-12-31 ONLY)
+  n_dev_failed_with_cost    : 2490
+  median_dif_cost_k         : 9551.2
+  mean_dif_cost_k           : 69429.4
+  median_bank_nonix_q_k     : 511.0
+  c_fn_k                    : 477.56
+  c_fp_k                    : 76.65
+  cost_ratio_fn_over_fp     : 6.23
+  bayes_theoretical_tau     : 0.1383
+
+Optimal Threshold on DEV OOF: tau* = 0.0500
+  DEV OOF at tau*: Cost=$893.90M (vs No-Alarm $1684.35M) | Recall=0.7131 | Precision=0.3195 | F1=0.4413 | Flagged=1.40%
+
+  --- COST-RATIO SENSITIVITY ON DEV OOF (c_FN / c_FP) ---
+  Ratio    5:1 -> optimal tau=0.0650 | Recall=0.676 | Precision=0.342 | Flagged=1.24%
+  Ratio   10:1 -> optimal tau=0.0300 | Recall=0.777 | Precision=0.274 | Flagged=1.77%
+  Ratio  6.2:1 -> optimal tau=0.0500 | Recall=0.713 | Precision=0.320 | Flagged=1.40%
+  Ratio   20:1 -> optimal tau=0.0160 | Recall=0.838 | Precision=0.220 | Flagged=2.38%
+  Ratio   50:1 -> optimal tau=0.0070 | Recall=0.894 | Precision=0.158 | Flagged=3.54%
+
+[3] PERMUTATION FEATURE IMPORTANCE ON DEV FOLD-3 (PR-AUC DROP)
+      feature  pr_auc_drop_mean  pr_auc_drop_std
+     EQ_ASSET           0.12823          0.00153
+      RBCRWAJ           0.05044          0.00428
+  EQ_ASSET_D4           0.03327          0.00457
+    NPL_LOANS           0.02687          0.00348
+      ROA_MA4           0.02010          0.00629
+      RBC1AAJ           0.01352          0.00118
+NONACCR_ASSET           0.00953          0.00129
+    LIQ_ASSET           0.00950          0.00227
+     RE_LOANS           0.00757          0.00156
+    BRO_ASSET           0.00648          0.00211
+          ROE           0.00600          0.00174
+         NIMY           0.00443          0.00118
+
+[4] SINGLE EVALUATION ON TEST SET (>= 2011-03-31, LOCKED tau* = 0.0500)
+           model    threshold_rule  tau  PR_AUC  ROC_AUC  Recall_Top5pct   Brier  TP   FP  FN     TN  Precision  Recall_row     F1  Flag_rate_pct Banks_caught_of_199  Test_Cost_USD_M  NoAlarm_Cost_USD_M  fit_sec
+baseline_camels4 locked_tau_0.0500 0.05  0.4854   0.9823          0.9371 0.00151 455  760 197 335570     0.3745      0.6979 0.4874          0.361     177/199 (88.9%)           152.33              311.37     1.85
+baseline_camels4    naive_tau_0.50 0.50  0.4854   0.9823          0.9371 0.00151  31    8 621 336322     0.7949      0.0475 0.0897          0.012      25/199 (12.6%)           297.18              311.37     1.85
+logistic_l2_full locked_tau_0.0500 0.05  0.5789   0.9824          0.9417 0.00117 547 1307 105 335023     0.2950      0.8390 0.4366          0.550     186/199 (93.5%)           150.33              311.37    18.68
+logistic_l2_full    naive_tau_0.50 0.50  0.5789   0.9824          0.9417 0.00117 204   59 448 336271     0.7757      0.3129 0.4459          0.078     119/199 (59.8%)           218.47              311.37    18.68
+  hist_gbdt_full locked_tau_0.0500 0.05  0.5570   0.9799          0.9417 0.00120 564 1698  88 334632     0.2493      0.8650 0.3871          0.671     189/199 (95.0%)           172.18              311.37    33.29
+  hist_gbdt_full    naive_tau_0.50 0.50  0.5570   0.9799          0.9417 0.00120 255  147 397 336183     0.6343      0.3911 0.4839          0.119     137/199 (68.8%)           200.86              311.37    33.29
+
+Saved all Part 5 tables to outputs/ (Test set evaluated exactly ONCE).
