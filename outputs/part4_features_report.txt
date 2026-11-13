@@ -1,0 +1,83 @@
+features: 29 | missing flags: ['P9ASSET_MISS', 'NAASSET_MISS', 'NTLNLS_MISS', 'ELNATR_MISS', 'ROE_MISS', 'BRO_MISS']
+rows: 1663876 | positives: 10860 | inf/NaN count: 0
+Point-in-time truncation check at 2005-12-31 (8,938 banks): PASSED 100% EXACT MATCH
+
+=== DIAGNOSTICS ON DEV PERIOD ONLY (<= 2009-12-31, rows=1,295,349, y=1=9,751) ===
+
+Correlation with y on DEV (real EWS features typically |r| < 0.25):
+shape: (29, 2)
+┌────────────────┬─────────────────┐
+│ column         ┆ corr_with_y_dev │
+│ ---            ┆ ---             │
+│ str            ┆ f64             │
+╞════════════════╪═════════════════╡
+│ NONACCR_ASSET  ┆ 0.2604          │
+│ NPL_LOANS      ┆ 0.2504          │
+│ ORE_ASSET      ┆ 0.2477          │
+│ ROA            ┆ -0.152          │
+│ PD90_ASSET     ┆ 0.1473          │
+│ ROA_SD4        ┆ 0.1376          │
+│ ROA_MA4        ┆ -0.1364         │
+│ NPL_LOANS_D4   ┆ 0.1261          │
+│ RES_LOANS      ┆ 0.1161          │
+│ ROA_D4         ┆ -0.1072         │
+│ EQ_ASSET       ┆ -0.1056         │
+│ EQ_ASSET_D4    ┆ -0.0966         │
+│ LIQ_ASSET      ┆ -0.0616         │
+│ DEP_ASSET      ┆ 0.0595          │
+│ ROE            ┆ -0.0496         │
+│ BRO_ASSET      ┆ 0.0379          │
+│ LOANS_ASSET    ┆ 0.0357          │
+│ EFFICIENCY     ┆ 0.035           │
+│ NIMY           ┆ -0.0303         │
+│ LOANS_ASSET_D4 ┆ -0.0227         │
+│ RE_LOANS       ┆ 0.0195          │
+│ NCO_RATE_Q     ┆ 0.0145          │
+│ RBCRWAJ        ┆ -0.0044         │
+│ LOG_ASSET      ┆ 0.004           │
+│ ASSET_G4       ┆ -0.0027         │
+│ RBC1AAJ        ┆ -0.0016         │
+│ PROV_RATE_Q    ┆ 0.0007          │
+│ ROA_Q_ANN      ┆ -0.0003         │
+│ DEP_G4         ┆ -0.0001         │
+└────────────────┴─────────────────┘
+
+Null share per feature on DEV (%):
+shape: (29, 2)
+┌────────────────┬──────────────┐
+│ column         ┆ null_pct_dev │
+│ ---            ┆ ---          │
+│ str            ┆ f64          │
+╞════════════════╪══════════════╡
+│ NPL_LOANS_D4   ┆ 8.36         │
+│ DEP_G4         ┆ 7.84         │
+│ EQ_ASSET_D4    ┆ 7.5          │
+│ NCO_RATE_Q     ┆ 7.31         │
+│ ASSET_G4       ┆ 7.28         │
+│ ROA_D4         ┆ 7.28         │
+│ LOANS_ASSET_D4 ┆ 7.28         │
+│ NONACCR_ASSET  ┆ 5.93         │
+│ PD90_ASSET     ┆ 5.93         │
+│ ROA_MA4        ┆ 5.5          │
+│ ROA_SD4        ┆ 5.5          │
+│ PROV_RATE_Q    ┆ 4.55         │
+│ EFFICIENCY     ┆ 2.61         │
+│ ROE            ┆ 1.26         │
+│ BRO_ASSET      ┆ 1.21         │
+│ RES_LOANS      ┆ 1.2          │
+│ NPL_LOANS      ┆ 1.16         │
+│ RE_LOANS       ┆ 0.97         │
+│ ROA_Q_ANN      ┆ 0.68         │
+│ EQ_ASSET       ┆ 0.23         │
+│ ORE_ASSET      ┆ 0.23         │
+│ LOG_ASSET      ┆ 0.0          │
+│ RBC1AAJ        ┆ 0.0          │
+│ RBCRWAJ        ┆ 0.0          │
+│ ROA            ┆ 0.0          │
+│ NIMY           ┆ 0.0          │
+│ LIQ_ASSET      ┆ 0.0          │
+│ DEP_ASSET      ┆ 0.0          │
+│ LOANS_ASSET    ┆ 0.0          │
+└────────────────┴──────────────┘
+
+saved data_processed/features.parquet
