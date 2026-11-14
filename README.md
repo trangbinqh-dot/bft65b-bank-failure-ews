@@ -4,30 +4,85 @@ End-to-end, leak-free, reproducible data engineering and machine learning pipeli
 
 ## 1. Repository Structure
 
-```text
-bft65b-bank-failure-ews/
-├── src/
-│   ├── common.py                 # Shared schema-harmonised loader & logging utilities
-│   ├── 00_schema_audit.py        # Part 1/2: Audit schema drift across 170 quarterly Parquet files
-│   ├── 01_download_fdic.py       # Part 1: Resumable, paginated, self-verifying FDIC API downloader
-│   ├── 02_storage_bench.py       # Part 1: CSV vs. Parquet (Uncompressed/Snappy/Zstd/Hive) benchmark
-│   ├── 03_data_quality.py        # Part 2: Automated data quality & YTD cumulative income audit
-│   ├── 03a_inspect.py            # Part 2: Supplementary anomaly & extreme-ratio inspection
-│   ├── 03b_exit_codes.py         # Part 2: Bank exit vs. failure reconciliation (Institutions vs. Failures)
-│   ├── 04_labels.py              # Part 2: Point-in-time (q, q+4] failure labelling & COST isolation
-│   ├── 05_clean_panel.py         # Part 2: YTD de-cumulation (*_Q), post-failure removal & panel export
-│   ├── 05a_ytd_check.py          # Part 2: Verification of quarterly flow de-cumulation
-│   ├── 05b_ntlnls_check.py       # Part 2: Net charge-offs YTD monotonicity check
-│   ├── 06a_polars_pipeline.py    # Part 3: Core Polars Lazy pipeline & query plan extraction
-│   ├── 06b_benchmark.py          # Part 3: Subprocess-isolated benchmark (Pandas vs. Polars Eager/Lazy)
-│   ├── 06c_scaling.py            # Part 3: 1x / 2x / 3x scaling experiment on 8 GB RAM laptop
-│   ├── 06d_pyspark_colab.ipynb   # Part 3: PySpark 4.0.5 equivalence check & Catalyst Physical Plan (Colab)
-│   ├── 07_features.py            # Part 4: 29 CAMELS ratios (true QIDX+4 lags) + point-in-time truncation test
-│   ├── 08_preprocess.py          # Part 4: Leak-free sklearn Pipeline (QuantileWinsorizer -> Imputer -> Scaler)
-│   ├── 09_modelling.py           # Part 5: Expanding-window temporal CV, cost threshold & single Test evaluation
-│   └── 09b_mllib_colab.ipynb     # Part 5: Distributed Spark MLlib Pipeline demonstration (Colab)
-├── outputs/                      # Saved benchmark CSVs, execution plans, quality audits, and model logs
-├── data_raw/                     # Raw FDIC API Parquet files & manifests (git-ignored)
-├── data_processed/               # Clean panel & engineered feature Parquet tables (git-ignored)
-├── requirements.txt              # Pinned Python package versions
-└── README.md
+    bft65b-bank-failure-ews/
+    ├── src/
+    │   ├── common.py                 # Shared schema-harmonised loader & logging utilities
+    │   ├── 00_schema_audit.py        # Part 1/2: Audit schema drift across 170 quarterly Parquet files
+    │   ├── 01_download_fdic.py       # Part 1: Resumable, paginated, self-verifying FDIC API downloader
+    │   ├── 02_storage_bench.py       # Part 1: CSV vs. Parquet (Uncompressed/Snappy/Zstd/Hive) benchmark
+    │   ├── 03_data_quality.py        # Part 2: Automated data quality & YTD cumulative income audit
+    │   ├── 03a_inspect.py            # Part 2: Supplementary anomaly & extreme-ratio inspection
+    │   ├── 03b_exit_codes.py         # Part 2: Bank exit vs. failure reconciliation (Institutions vs. Failures)
+    │   ├── 04_labels.py              # Part 2: Point-in-time (q, q+4] failure labelling & COST isolation
+    │   ├── 05_clean_panel.py         # Part 2: YTD de-cumulation (*_Q), post-failure removal & panel export
+    │   ├── 05a_ytd_check.py          # Part 2: Verification of quarterly flow de-cumulation
+    │   ├── 05b_ntlnls_check.py       # Part 2: Net charge-offs YTD monotonicity check
+    │   ├── 06a_polars_pipeline.py    # Part 3: Core Polars Lazy pipeline & query plan extraction
+    │   ├── 06b_benchmark.py          # Part 3: Subprocess-isolated benchmark (Pandas vs. Polars Eager/Lazy)
+    │   ├── 06c_scaling.py            # Part 3: 1x / 2x / 3x scaling experiment on 8 GB RAM laptop
+    │   ├── 06d_pyspark_colab.ipynb   # Part 3: PySpark 4.0.5 equivalence check & Catalyst Physical Plan (Colab)
+    │   ├── 07_features.py            # Part 4: 29 CAMELS ratios (true QIDX+4 lags) + point-in-time truncation test
+    │   ├── 08_preprocess.py          # Part 4: Leak-free sklearn Pipeline (QuantileWinsorizer -> Imputer -> Scaler)
+    │   ├── 09_modelling.py           # Part 5: Expanding-window temporal CV, cost threshold & single Test evaluation
+    │   └── 09b_mllib_colab.ipynb     # Part 5: Distributed Spark MLlib Pipeline demonstration (Colab)
+    ├── outputs/                      # Saved benchmark CSVs, execution plans, quality audits, and model logs
+    ├── data_raw/                     # Raw FDIC API Parquet files & manifests (git-ignored)
+    ├── data_processed/               # Clean panel & engineered feature Parquet tables (git-ignored)
+    ├── requirements.txt              # Pinned Python package versions (UTF-8)
+    └── README.md
+
+*(Note: `data_raw/` and `data_processed/` are excluded via `.gitignore` to keep the repository lightweight; all intermediate files are deterministically regenerated by the scripts below.)*
+
+## 2. Environment & Reproducibility Setup
+
+- **Local Hardware Tested:** Intel Core i5-1235U, 8 GB RAM, Windows 10/11
+- **Python & Key Packages:** Python 3.10.10 (`polars==2.0.0`, `pandas==2.3.3`, `pyarrow==25.0.1`, `scikit-learn==1.7.2`)
+- **Distributed Demo Environment:** Google Colab Linux VM (`Apache Spark 4.0.5`, `Polars 1.35.2`)
+- **Determinism:** All stochastic routines use fixed seed `SEED = 42`.
+
+Setup commands (PowerShell):
+
+    python -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    pip install -r requirements.txt
+
+## 3. End-to-End Execution Order
+
+Run all commands sequentially from the repository root (`bft65b-bank-failure-ews/`):
+
+    # --- PART 1: Acquisition & Storage ---
+    python src/01_download_fdic.py      # Downloads 170 quarters (1984Q1-2026Q2), Failures & Institutions
+    python src/00_schema_audit.py       # Audits cross-quarter schema drift -> outputs/part2_schema_audit.txt
+    python src/02_storage_bench.py      # Runs storage layout benchmark -> outputs/part1_storage_benchmark.csv
+
+    # --- PART 2: Data Quality & Clean Point-in-Time Panel ---
+    python src/03_data_quality.py       # Generates automated quality audit -> outputs/part2_quality_report.txt
+    python src/03b_exit_codes.py        # Verifies failure vs. merger exits
+    python src/04_labels.py             # Builds (q, q+4] labels through 2025Q2 & isolates failure_costs.parquet
+    python src/05_clean_panel.py        # De-cumulates YTD flows & writes data_processed/panel_clean.parquet
+
+    # --- PART 3: Scalable Processing ---
+    python src/06a_polars_pipeline.py   # Exports unoptimized & optimized Polars query plans
+    python src/06b_benchmark.py         # Subprocess timing & Peak RAM benchmark -> outputs/part3_polars_vs_pandas.csv
+    python src/06c_scaling.py           # Runs 1x, 2x, 3x scaling experiment -> outputs/part3_scaling.csv
+
+    # --- PART 4: Leak-Free Feature Pipeline ---
+    python src/07_features.py           # Computes 29 CAMELS features + runs 2005Q4 truncation check
+    python src/08_preprocess.py         # Verifies DEV-only fitting of Winsorizer/Imputer/Scaler (39 model inputs)
+
+    # --- PART 5: Temporal Validation, Cost Thresholding & Single Test Run ---
+    python src/09_modelling.py          # 3-fold temporal CV (4-qtr purge gap), locks tau*=0.05, evaluates Test ONCE
+
+### Running the PySpark & Spark MLlib Demonstrations (Google Colab)
+1. Open `src/06d_pyspark_colab.ipynb` on Google Colab, upload `data_processed/panel_clean.parquet` and `data_processed/bench_polars_lazy.parquet` to `/content/`, and run all cells to reproduce `outputs/part3_spark_plan.txt` and `outputs/part3_spark_report.txt`.
+2. Open `src/09b_mllib_colab.ipynb` on Google Colab, upload `data_processed/features.parquet` to `/content/`, and run all cells to reproduce `outputs/part5_mllib_report.txt`.
+
+## 4. Anti-Leakage Guarantees
+
+1. **Strict Temporal Split & 4-Quarter Purge Gap:** Development (`1984Q1–2009Q4`, 1,295,349 rows), 4-quarter purge gap (`2010Q1–2010Q4`, 31,545 rows excluded), Locked Test (`2011Q1–2025Q2`, 336,982 rows; quarters after `2025Q2` dropped to prevent right-censoring).
+2. **Point-in-Time Feature Construction:** YTD flows de-cumulated using same-year `q - 1` only; 4-quarter lags joined via exact calendar quarter index (`QIDX + 4`); post-failure filings (`QDATE >= FAILDATE`), `COST`, and `P3ASSET` strictly excluded (`assert`-enforced) and verified via a 2005Q4 truncation test.
+3. **Training-Only Preprocessing & Single Test Evaluation:** Custom `QuantileWinsorizer`, `SimpleImputer`, and `StandardScaler` are encapsulated inside `sklearn.pipeline.Pipeline`, refitted inside each expanding-window CV fold (with a >400-day purge gap), and evaluated on the locked Test period exactly once using DEV-locked threshold `tau* = 0.0500`.
+
+## 5. AI Usage Disclosure
+
+In accordance with course academic integrity guidelines, AI assistants (Anthropic Claude and Google Gemini) were used for code syntax debugging across Polars/PySpark/scikit-learn, cross-checking anti-leakage validation logic, generating matplotlib plots from empirical `outputs/` files, and polishing academic exposition. All API downloads, benchmark executions, numerical verifications against `outputs/`, methodological choices, and final conclusions were executed and verified by the author.
