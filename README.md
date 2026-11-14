@@ -49,7 +49,7 @@ End-to-end, leak-free, reproducible data engineering and machine learning pipeli
 - **Python & Verified Packages:** Python 3.10.10 (`polars==2.0.0`, `pandas==2.3.3`, `numpy==2.2.6`, `pyarrow==25.0.1`, `scikit-learn==1.7.2`, `psutil==7.2.2`, `requests==2.34.2`)
 - **Distributed Demo Environment:** Google Colab Linux VM (`Apache Spark 4.0.5`, `Polars 1.35.2`)
 - **Determinism:** All stochastic routines use fixed seed `SEED = 42`.
-- **Estimated Runtime on 8 GB Laptop:** ~25–35 minutes for initial FDIC API download (`01_download_fdic.py`, network-bound with polite 1s delay); ~4–5 minutes total for all local processing, benchmarking, feature engineering, and modelling scripts (`00` through `09`).
+- **Approximate Runtime (not precisely timed):** Initial FDIC API download ~30 min (`01_download_fdic.py`); local scripts (`00` through `09`) ~15–30 min total on an 8 GB RAM laptop.
 
 Setup commands (PowerShell):
 
@@ -99,4 +99,4 @@ Run all commands sequentially from the repository root (`bft65b-bank-failure-ews
 
 ## 6. AI Usage Disclosure
 
-In accordance with course academic integrity guidelines, AI assistants (Anthropic Claude and Google Gemini) were used for code syntax debugging across Polars/PySpark/scikit-learn, cross-checking anti-leakage validation logic, generating report visualisations from empirical `outputs/` files, and polishing academic exposition. All API downloads, benchmark executions, numerical verifications against `outputs/`, methodological choices, and final conclusions were executed and verified by the author.
+In accordance with course academic integrity guidelines, AI assistants (Anthropic Claude and Google Gemini) were used for code syntax debugging across Polars/PySpark/scikit-learn, cross-checking anti-leakage validation logic, and polishing academic exposition. All API downloads, benchmark executions, numerical verifications against `outputs/`, methodological choices, and final conclusions were executed and verified by the author.
