@@ -88,11 +88,11 @@ steps = [
     ("5. Scalable Engine", "Polars Lazy vs. Pandas\nPySpark Catalyst Plan"),
     ("6. EWS Modelling", "29 CAMELS + 10 Flags\nDev CV -> Single Test Run"),
 ]
-w, h, gap = 0.145, 0.68, 0.022
+w, h, gap = 0.132, 0.66, 0.036
 for idx, (title, body) in enumerate(steps):
     x = 0.01 + idx * (w + gap)
-    hdr = mpatches.FancyBboxPatch((x, 0.52), w, 0.30, boxstyle="round,pad=0.015", fc=C_NAVY, ec=C_NAVY)
-    box = mpatches.FancyBboxPatch((x, 0.12), w, 0.42, boxstyle="round,pad=0.015", fc="#F8FAFC", ec=C_NAVY, lw=1.1)
+    hdr = mpatches.FancyBboxPatch((x, 0.52), w, 0.30, boxstyle="round,pad=0.008", fc=C_NAVY, ec=C_NAVY)
+    box = mpatches.FancyBboxPatch((x, 0.12), w, 0.42, boxstyle="round,pad=0.008", fc="#F8FAFC", ec=C_NAVY, lw=1.1)
     ax.add_patch(box)
     ax.add_patch(hdr)
     ax.text(x + w / 2, 0.67, title, ha="center", va="center", color="white", fontweight="bold", fontsize=8.8)
@@ -198,8 +198,8 @@ if pre_corr and post_corr:
     ax.set_yticklabels(cdf.index)
     ax.set_xlim(-0.34, 0.33)
     ax.set_xlabel("Pearson correlation (r) with failure label y on Dev period (n = 1,295,349)")
-    ax.set_title("Signal Recovery After Training-Only Winsorization (Top 12 CAMELS Features)")
-    ax.legend(loc="lower left", fontsize=8.2, frameon=True, facecolor="white", framealpha=0.92)
+    ax.set_title("Signal Recovery After Training-Only Winsorization (Top 12 CAMELS Features)", pad=26)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.13), ncol=2, fontsize=8.2, frameon=True, facecolor="white", edgecolor="#CBD5E1")
     save(fig, "fig5_winsorization_corr.png")
 
 # ---------------------------------------------------------------- Fig 6: Part 5 CV PR-AUC
