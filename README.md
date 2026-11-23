@@ -48,7 +48,7 @@ End-to-end, leak-free, reproducible data engineering and machine learning pipeli
 ## 3. Environment & Reproducibility Setup
 
 - **Local Hardware Tested:** Intel Core i5-1235U, 8 GB RAM, Windows 10/11
-- **Python & Verified Packages:** Python 3.10.10 (`polars==2.0.0`, `pandas==2.3.3`, `numpy==2.2.6`, `pyarrow==25.0.1`, `scikit-learn==1.7.2`, `psutil==7.2.2`, `requests==2.34.2`, `matplotlib==3.10.8`)
+- **Python & Verified Packages:** Python 3.10.10 (`polars==2.0.0`, `pandas==2.3.3`, `numpy==2.2.6`, `pyarrow==25.0.1`, `scikit-learn==1.7.2`, `psutil==7.2.2`, `requests==2.34.2`, `matplotlib==3.10.9`)
 - **Distributed Demo Environment:** Google Colab Linux VM (`Apache Spark 4.0.5`, `Polars 1.35.2`)
 - **Determinism:** All stochastic routines use fixed seed `SEED = 42`.
 - **Approximate Runtime (not precisely timed):** Initial FDIC API download ~30 min (`01_download_fdic.py`); local scripts (`00` through `10`) ~15–30 min total on an 8 GB RAM laptop.
