@@ -86,6 +86,7 @@ Run all commands sequentially from the repository root (`bft65b-bank-failure-ews
 
     # --- PART 5: Temporal Validation, Cost Thresholding & Single Test Run ---
     python src/09_modelling.py          # 3-fold temporal CV (4-qtr purge gap), locks tau*=0.05, evaluates Test ONCE
+    python src/09c_dev_sensitivity.py   # Supplementary Dev-only RBC pre-1990 & OOF calibration checks
 
     # --- PART 6: Reproducible Figures ---
     python src/10_make_figures.py       # Rebuilds Figures 1-8 and A1-A2 -> outputs/figures/*.png
