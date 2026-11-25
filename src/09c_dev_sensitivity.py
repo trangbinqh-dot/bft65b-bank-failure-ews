@@ -1,15 +1,7 @@
-"""Part 5 supplementary Dev-only checks (strictly QDATE <= 2009-12-31; Test untouched).
-
-1. Pre-1990 Basel I zero-coding sensitivity on 3-fold expanding-window CV (HistGBDT):
-   Replaces pre-1990 zeros in RBC1AAJ and RBCRWAJ with NaN in memory (adding two
-   in-memory missingness indicators RBC1AAJ_MISS and RBCRWAJ_MISS) without modifying
-   data_processed/features.parquet or any locked model/threshold.
-2. Out-of-fold probability calibration (reliability) table on Dev OOF predictions:
-   Quantifies probability over/under-confidence across predicted probability bins
-   to support the dynamic recalibration recommendation in Section 7.2.
-"""
+"""Supplementary Dev-only checks (strictly QDATE <= 2009-12-31; Test untouched)."""
 from datetime import date
 from pathlib import Path
+import importlib.util
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -20,29 +12,39 @@ from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_s
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-# Import exact custom QuantileWinsorizer and feature lists from 08_preprocess.py
-import importlib.util
-
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("prep08", ROOT / "src" / "08_preprocess.py")
-prep08 = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(prep08)
+SEED = 42
+
+# Dynamically load exact functions/classes from src/08_preprocess.py & src/09_modelling.py
+spec08 = importlib.util.spec_from_file_location("prep08", ROOT / "src" / "08_preprocess.py")
+prep08 = importlib.util.module_from_spec(spec08)
+spec08.loader.exec_module(prep08)
 
 QuantileWinsorizer = prep08.QuantileWinsorizer
-CONT_COLS = list(prep08.CONT_COLS)
-MISS_COLS = list(prep08.MISS_COLS)
-SEED = 42
 
 FOLDS = [
     ("Fold1_SL_1990_1993", date(1988, 12, 31), date(1990, 3, 31), date(1993, 12, 31)),
     ("Fold2_Calm_2000_2006", date(1998, 12, 31), date(2000, 3, 31), date(2006, 12, 31)),
-    ("Fold3_GFC_2008_2009", date(2006, 12, 31), date(2008, 3, 31), date(2009, 12, 31)),
+    ("Fold3_GFC_2008_2009", date(1998 + 8, 12, 31), date(2008, 3, 31), date(2009, 12, 31)),
 ]
+
+CONT_COLS = [
+    "EQ_ASSET", "RBC1AAJ", "RBCRWAJ", "LOG_ASSET",
+    "NPL_LOANS", "NONACCR_ASSET", "PD90_ASSET", "ORE_ASSET", "RES_LOANS",
+    "EFFICIENCY",
+    "ROA", "ROE", "NIMY", "ROA_Q_ANN", "NCO_RATE_Q", "PROV_RATE_Q",
+    "LIQ_ASSET", "DEP_ASSET", "BRO_ASSET", "LOANS_ASSET", "RE_LOANS",
+    "ASSET_G4", "DEP_G4", "EQ_ASSET_D4", "NPL_LOANS_D4",
+    "ROA_D4", "LOANS_ASSET_D4", "ROA_MA4", "ROA_SD4",
+]
+
+DERIVED_MISS_SRC = ["ASSET_G4", "NPL_LOANS_D4", "ROA_MA4", "EFFICIENCY"]
 
 
 def build_hgb_pipe(cont_cols: list[str], miss_cols: list[str]) -> Pipeline:
+    # Reuse make_preprocess_pipeline from 08_preprocess if matching signature, else build identical
     num_pipe = Pipeline([
-        ("winsor", QuantileWinsorizer(lower=0.005, upper=0.995)),
+        ("winsor", QuantileWinsorizer(0.005, 0.995)),
         ("impute", SimpleImputer(strategy="median")),
         ("scale", StandardScaler()),
     ])
@@ -66,32 +68,38 @@ def build_hgb_pipe(cont_cols: list[str], miss_cols: list[str]) -> Pipeline:
 
 def main() -> None:
     feat_path = ROOT / "data_processed" / "features.parquet"
-    # Strictly load Development period only (<= 2009-12-31); Test set is NEVER loaded
     df_dev = (
         pl.scan_parquet(feat_path)
         .filter(pl.col("QDATE") <= date(2009, 12, 31))
         .collect()
     )
     assert df_dev["QDATE"].max() <= date(2009, 12, 31), "Leakage guard failed!"
-    print(f"Loaded Dev-only panel: {df_dev.height:,} rows (max QDATE = {df_dev['QDATE'].max()})")
 
-    # Convert to pandas once for sklearn Pipeline
-    pdf_base = df_dev.select(["QDATE", "y"] + CONT_COLS + MISS_COLS).to_pandas()
+    # Add the 4 derived *_MISS flags in memory if not already stored in features.parquet
+    for c in DERIVED_MISS_SRC:
+        mc = f"{c}_MISS"
+        if mc not in df_dev.columns:
+            df_dev = df_dev.with_columns(pl.col(c).is_null().cast(pl.Int8).alias(mc))
 
-    # Construct in-memory variant: pre-1990 zeros in RBC1AAJ / RBCRWAJ -> NaN + *_MISS flags
+    miss_cols = [c for c in df_dev.columns if c.endswith("_MISS") and c != "P3ASSET_MISS"]
+    print(f"Loaded Dev-only panel: {df_dev.height:,} rows | {len(CONT_COLS)} cont + {len(miss_cols)} miss flags = {len(CONT_COLS)+len(miss_cols)} inputs")
+
+    pdf_base = df_dev.select(["QDATE", "y"] + CONT_COLS + miss_cols).to_pandas()
+
+    # In-memory variant: pre-1990 zeros in RBC1AAJ / RBCRWAJ -> NaN + *_MISS flags
     pdf_alt = pdf_base.copy()
     pre1990 = pd.to_datetime(pdf_alt["QDATE"]).dt.year < 1990
     for col in ["RBC1AAJ", "RBCRWAJ"]:
         mask_zero = pre1990 & (pdf_alt[col] == 0.0)
         n_replaced = int(mask_zero.sum())
         pdf_alt.loc[mask_zero, col] = np.nan
-        pdf_alt[f"{col}_MISS"] = pdf_alt[col].isna().astype(np.float64)
+        pdf_alt[f"{col}_MISS"] = pdf_alt[col].isna().astype(np.int8)
         print(f"In-memory pre-1990 {col} == 0 -> NaN: {n_replaced:,} rows")
 
-    alt_miss_cols = MISS_COLS + ["RBC1AAJ_MISS", "RBCRWAJ_MISS"]
+    alt_miss_cols = miss_cols + [c for c in ["RBC1AAJ_MISS", "RBCRWAJ_MISS"] if c not in miss_cols]
 
     rows_comp = []
-    oof_y, oof_p_base, oof_fold = [], [], []
+    oof_y, oof_p_base = [], []
 
     for fname, tr_end, va_start, va_end in FOLDS:
         assert (va_start - tr_end).days > 400, f"Purge gap < 4 quarters on {fname}"
@@ -102,12 +110,10 @@ def main() -> None:
         y_tr = pdf_base.loc[tr_mask, "y"].to_numpy()
         y_va = pdf_base.loc[va_mask, "y"].to_numpy()
 
-        # 1. Baseline HistGBDT (exact locked specification)
-        pipe_base = build_hgb_pipe(CONT_COLS, MISS_COLS)
-        pipe_base.fit(pdf_base.loc[tr_mask, CONT_COLS + MISS_COLS], y_tr)
-        p_base = pipe_base.predict_proba(pdf_base.loc[va_mask, CONT_COLS + MISS_COLS])[:, 1]
+        pipe_base = build_hgb_pipe(CONT_COLS, miss_cols)
+        pipe_base.fit(pdf_base.loc[tr_mask, CONT_COLS + miss_cols], y_tr)
+        p_base = pipe_base.predict_proba(pdf_base.loc[va_mask, CONT_COLS + miss_cols])[:, 1]
 
-        # 2. Pre-1990 RBC zero -> NaN sensitivity variant
         pipe_alt = build_hgb_pipe(CONT_COLS, alt_miss_cols)
         pipe_alt.fit(pdf_alt.loc[tr_mask, CONT_COLS + alt_miss_cols], y_tr)
         p_alt = pipe_alt.predict_proba(pdf_alt.loc[va_mask, CONT_COLS + alt_miss_cols])[:, 1]
@@ -130,15 +136,14 @@ def main() -> None:
 
         oof_y.append(y_va)
         oof_p_base.append(p_base)
-        oof_fold.extend([fname] * len(y_va))
 
     df_comp = pd.DataFrame(rows_comp)
     mean_base = df_comp["pr_auc_baseline"].mean()
     mean_alt = df_comp["pr_auc_rbc_null"].mean()
-
-    # OOF reliability / calibration table across probability bins (baseline HistGBDT)
     y_all = np.concatenate(oof_y)
     p_all = np.concatenate(oof_p_base)
+    pooled_pr_base = average_precision_score(y_all, p_all)
+
     bins = [0.0, 0.01, 0.05, 0.15, 0.30, 0.50, 1.0001]
     labels = ["[0.00, 0.01)", "[0.01, 0.05)", "[0.05, 0.15)", "[0.15, 0.30)", "[0.30, 0.50)", "[0.50, 1.00]"]
     b_idx = pd.cut(p_all, bins=bins, labels=labels, right=False)
@@ -153,7 +158,9 @@ def main() -> None:
         )
         .reset_index()
     )
-    cal_df["pred_to_actual_ratio"] = (cal_df["mean_pred_prob"] / cal_df["actual_fail_rate"].replace(0, np.nan)).round(2)
+    cal_df["pred_to_actual_ratio"] = (
+        cal_df["mean_pred_prob"] / cal_df["actual_fail_rate"].replace(0, np.nan)
+    ).round(2)
 
     out_txt = ROOT / "outputs" / "part5_dev_sensitivity_and_calibration.txt"
     out_csv1 = ROOT / "outputs" / "part5_rbc_pre1990_sensitivity.csv"
@@ -168,6 +175,7 @@ def main() -> None:
         "[1] PRE-1990 RBC ZERO-TO-NULL SENSITIVITY (HistGBDT 3-Fold Expanding CV)",
         df_comp.to_string(index=False),
         f"Mean 3-fold PR-AUC: baseline = {mean_base:.4f} | pre-1990 RBC 0->NaN = {mean_alt:.4f} | diff = {mean_alt - mean_base:+.4f}",
+        f"Pooled OOF PR-AUC (baseline sanity check vs Table 11): {pooled_pr_base:.4f}",
         "",
         "[2] DEV OUT-OF-FOLD PROBABILITY CALIBRATION / RELIABILITY TABLE (HistGBDT)",
         f"Pooled OOF rows: {len(y_all):,} | Positives: {int(y_all.sum()):,} ({y_all.mean()*100:.3f}%) | Brier: {brier_score_loss(y_all, p_all):.6f}",

@@ -1,0 +1,4 @@
+fold,n_val,n_pos,pr_auc_baseline,pr_auc_rbc_null,pr_auc_diff,roc_auc_baseline,roc_auc_rbc_null
+Fold1_SL_1990_1993,233913,2400,0.366,0.3023,-0.0637,0.979,0.9789
+Fold2_Calm_2000_2006,263593,102,0.0892,0.0864,-0.0028,0.8938,0.8891
+Fold3_GFC_2008_2009,66919,1025,0.6514,0.6583,0.0069,0.9772,0.9781

@@ -1,0 +1,20 @@
+=== SUPPLEMENTARY DEV-ONLY CHECKS (QDATE <= 2009-12-31; TEST UNTOUCHED) ===
+Dev rows loaded: 1,295,349 | Max QDATE: 2009-12-31
+
+[1] PRE-1990 RBC ZERO-TO-NULL SENSITIVITY (HistGBDT 3-Fold Expanding CV)
+                fold  n_val  n_pos  pr_auc_baseline  pr_auc_rbc_null  pr_auc_diff  roc_auc_baseline  roc_auc_rbc_null
+  Fold1_SL_1990_1993 233913   2400           0.3660           0.3023      -0.0637            0.9790            0.9789
+Fold2_Calm_2000_2006 263593    102           0.0892           0.0864      -0.0028            0.8938            0.8891
+ Fold3_GFC_2008_2009  66919   1025           0.6514           0.6583       0.0069            0.9772            0.9781
+Mean 3-fold PR-AUC: baseline = 0.3689 | pre-1990 RBC 0->NaN = 0.3490 | diff = -0.0199
+Pooled OOF PR-AUC (baseline sanity check vs Table 11): 0.4074
+
+[2] DEV OUT-OF-FOLD PROBABILITY CALIBRATION / RELIABILITY TABLE (HistGBDT)
+Pooled OOF rows: 564,425 | Positives: 3,527 (0.625%) | Brier: 0.004591
+         bin  n_obs  n_pos  mean_pred_prob  actual_fail_rate  pred_to_actual_ratio
+[0.00, 0.01) 548152    489        0.000415          0.000892                  0.47
+[0.01, 0.05)   8389    518        0.022702          0.061748                  0.37
+[0.05, 0.15)   3481    656        0.089251          0.188452                  0.47
+[0.15, 0.30)   1916    596        0.215068          0.311065                  0.69
+[0.30, 0.50)   1303    567        0.389198          0.435150                  0.89
+[0.50, 1.00]   1184    701        0.639969          0.592061                  1.08
